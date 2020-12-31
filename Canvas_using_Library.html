@@ -1,0 +1,85 @@
+<!DOCTYPE HTML>
+<html>
+
+<head>
+    <script type="text/javascript" src="https://canvasjs.com/assets/script/canvasjs.min.js"></script>
+</head>
+
+<body>
+    <div>
+        <input id="run" type="button" value="Run" onclick="runMe()">
+    </div>
+    <div id="chartContainer" />
+    <script>
+        var dps = []; // dataPoints
+        var xMin = 0;
+        var xMax = 10;
+        var chart;
+        window.onload = function () {              
+            chart = new CanvasJS.Chart("chartContainer", {
+                axisX: {
+                    viewportMinimum: xMin,
+                    viewportMaximum: xMax,
+                    interval: 2,
+                },
+                axisY: {
+                    viewportMinimum: -3,
+                    viewportMaximum: 3,
+                    interval: 1
+                },
+                data: [{
+                    type: "spline",
+                    dataPoints: dps
+                }]
+            });
+            chart.render();
+        }
+
+        var runMe = function () {
+            var xVal = 0;
+            var yVal = 0;
+            var updateInterval = 200;
+            var dataLength = 6; // number of dataPoints visible at any point
+
+
+            var updateChart = function (count) {
+                count = 1;
+                // count is number of times loop runs to generate random dataPoints.
+                
+                for (var j = 0; j <= count; j++) {
+                    yVal = Math.round(Math.random() * (3 - -3)) - 3;
+                    dps.push({
+                        x: xVal,
+                        y: yVal
+                    });
+                    xVal += 1;
+                };
+
+                if (dps.length > dataLength) {
+                xMin += 2
+                xMax += 2;
+            }
+                console.log(dps);
+                // console.log(xMin);
+                // console.log(xMax);
+                // console.log(chart);
+                chart.options.axisX.viewportMinimum = xMin;
+                chart.options.axisX.viewportMaximum = xMax;
+                chart.render();
+                if (xVal <= 99)
+                    setTimeout(function () {
+                        updateChart(1)
+                    }, updateInterval);
+            };
+
+            // generates first set of dataPoints
+            
+            updateChart(1);
+
+            // update chart after specified time. 
+        }
+
+    </script>
+</body>
+
+</html>

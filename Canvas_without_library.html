@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+    <meta charset="utf-8" />
+    <title>Assignment</title>
+    <script>
+
+        function LineChart(con) {
+            // user defined properties  
+            this.canvas = document.getElementById(con.canvasId);
+            this.minX = con.minX;
+            this.minY = con.minY;
+            this.maxX = con.maxX;
+            this.maxY = con.maxY;
+            this.unitsPerTickX = con.unitsPerTickX;
+            this.unitsPerTickY = con.unitsPerTickY;
+
+            // constants  
+            this.padding = 10;
+            this.tickSize = 10;
+            this.axisColor = "#555";
+            this.pointRadius = 5;
+            this.font = "12pt Calibri";
+
+            this.fontHeight = 12;
+
+            // relationships       
+            this.context = this.canvas.getContext("2d");
+            this.rangeX = this.maxX - this.minX;
+            this.rangeY = this.maxY - this.minY;
+            this.numXTicks = Math.round(this.rangeX / this.unitsPerTickX);
+            this.numYTicks = Math.round(this.rangeY / this.unitsPerTickY);
+            this.x = this.getLongestValueWidth() + this.padding * 2;
+            this.y = this.padding * 2;
+            this.width = this.canvas.width - this.x - this.padding * 2;
+            this.height = this.canvas.height - this.y - this.padding - this.fontHeight;
+            this.scaleX = this.width / this.rangeX;
+            this.scaleY = this.height / this.rangeY;
+
+            // draw x y axis and tick marks  
+            this.drawXAxis();
+            this.drawYAxis();
+        }
+
+        LineChart.prototype.getLongestValueWidth = function () {
+            this.context.font = this.font;
+            var longestValueWidth = 0;
+            for (var n = 0; n <= this.numYTicks; n++) {
+                var value = this.maxY - (n * this.unitsPerTickY);
+                longestValueWidth = Math.max(longestValueWidth, this.context.measureText(value).width);
+            }
+            return longestValueWidth;
+        };
+
+        LineChart.prototype.drawXAxis = function () {
+            var context = this.context;
+            context.save();
+            context.beginPath();
+            context.moveTo(this.x, this.y + this.height);
+            context.lineTo(this.x + this.width, this.y + this.height);
+            context.strokeStyle = this.axisColor;
+            context.lineWidth = 2;
+            context.stroke();
+
+            // draw tick marks  
+            for (var n = 0; n < this.numXTicks; n++) {
+                context.beginPath();
+                context.moveTo((n + 1) * this.width / this.numXTicks + this.x, this.y + this.height);
+                context.lineTo((n + 1) * this.width / this.numXTicks + this.x, this.y + this.height - this.tickSize);
+                context.stroke();
+            }
+
+            // draw labels  
+            context.font = this.font;
+            context.fillStyle = "black";
+            context.textAlign = "center";
+            context.textBaseline = "middle";
+
+
+            for (var n = 0; n < this.numXTicks; n++) {
+                var label = this.maxX - ((this.numXTicks - n) * 2);
+                context.save();
+                context.translate((n + 1) * this.width / this.numXTicks + this.x, this.y + this.height + this.padding);
+                context.fillText(label, 0, 0);
+                context.restore();
+            }
+            context.restore();
+        };
+
+        LineChart.prototype.drawYAxis = function () {
+            var context = this.context;
+            context.save();
+            context.save();
+            context.beginPath();
+            context.moveTo(this.x, this.y);
+            context.lineTo(this.x, this.y + this.height);
+            context.strokeStyle = this.axisColor;
+            context.lineWidth = 2;
+            context.stroke();
+            context.restore();
+
+            // draw tick marks  
+            for (var n = 0; n < this.numYTicks; n++) {
+                context.beginPath();
+                context.moveTo(this.x, n * this.height / this.numYTicks + this.y);
+                context.lineTo(this.x + this.tickSize, n * this.height / this.numYTicks + this.y);
+                context.stroke();
+            }
+
+            // draw values  
+            context.font = this.font;
+            context.fillStyle = "black";
+            context.textAlign = "right";
+            context.textBaseline = "middle";
+
+            for (var n = 0; n < this.numYTicks; n++) {
+                var value = Math.round(this.maxY - n * this.maxY / this.numYTicks);
+                context.save();
+                context.translate(this.x - this.padding, n * this.height / this.numYTicks + this.y);
+                context.fillText(value, 0, 0);
+                context.restore();
+            }
+            context.restore();
+        };
+
+        LineChart.prototype.drawLine = function (data, color, width) {
+            var context = this.context;
+            context.save();
+            this.transformContext();
+            context.lineWidth = width;
+            context.strokeStyle = color;
+            context.fillStyle = color;
+            context.beginPath();
+            context.moveTo((data[0].x - this.minX) * this.scaleX, data[0].y * this.scaleY);
+
+            for (var n = 0; n < data.length; n++) {
+                var point = data[n];
+
+                // draw segment  
+                context.lineTo((point.x - this.minX) * this.scaleX, point.y * this.scaleY);
+                context.stroke();
+                context.closePath();
+                context.beginPath();
+                context.arc((point.x - this.minX) * this.scaleX, point.y * this.scaleY, this.pointRadius, 0, 2 * Math.PI, false);
+                context.fill();
+                context.closePath();
+
+                // position for next segment  
+                context.beginPath();
+                context.moveTo((point.x - this.minX) * this.scaleX, point.y * this.scaleY);
+            }
+            context.restore();
+        };
+
+        LineChart.prototype.transformContext = function () {
+            var context = this.context;
+
+            // move context to center of canvas  
+            this.context.translate(this.x, this.y + this.height);
+
+            // invert the y scale so that that increments  
+            // as you move upwards  
+            context.scale(1, -1);
+        };
+
+        LineChart.prototype.clearChart = function () {
+            var context = this.context;
+            this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        };
+
+        var minX_initial = 0, maxX_initial = 10, dps = [], myLineChart;
+
+        window.onload = function () {
+            myLineChart = new LineChart({
+                canvasId: "myCanvas",
+                minX: minX_initial,
+                minY: 0,
+                maxX: maxX_initial,
+                maxY: 5,
+                unitsPerTickX: 2,
+                unitsPerTickY: 1
+            });
+        };
+
+        var runMe = function () {
+            console.log(myLineChart);
+            var xVal = 0;
+            var yVal = 0;
+            var updateInterval = 200;
+            var dataLength = 12; // number of dataPoints visible at any point
+
+            var updateChart = function (count) {
+                count = 1;
+                // count is number of times loop runs to generate random dataPoints.
+
+                for (var j = 0; j <= count; j++) {
+                    yVal = Math.round(Math.random() * (5 - 0)) - 0;
+                    dps.push({
+                        x: xVal,
+                        y: yVal
+                    });
+                    xVal += 1;
+                };
+
+                if (dps.length > dataLength) {
+                    minX_initial += 2
+                    maxX_initial += 2;
+                    dps.shift();
+                    dps.shift();
+                }
+                myLineChart.clearChart();
+                myLineChart = new LineChart({
+                    canvasId: "myCanvas",
+                    minX: minX_initial,
+                    minY: 0,
+                    maxX: maxX_initial,
+                    maxY: 5,
+                    unitsPerTickX: 2,
+                    unitsPerTickY: 1
+                });
+
+                myLineChart.drawLine(dps, "blue", 3);
+
+
+                if (xVal < 101)
+                    setTimeout(function () {
+                        updateChart(1)
+                    }, updateInterval);
+            };
+
+            // generates first set of dataPoints           
+            updateChart(1);
+            // update chart after specified time. 
+        }
+    </script>
+</head>
+
+<body>
+    <div>
+        <input id="run" type="button" value="Run" onclick="runMe()">
+    </div>
+
+    <canvas id="myCanvas" width="600" height="300" style="border: 1px solid black;"></canvas>
+</body>
+
+</html>
