@@ -1,8 +1,4 @@
-## Environment 
-
-Implement the Scroll behavior as shown in the attached MP4 file using HTML5 Canvas.
-
- 
+Implement the Scroll behavior as shown in the attached MP4 file using HTML5 Canvas. 
 
 This will involve but not limited to:
 
